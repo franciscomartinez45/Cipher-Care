@@ -23,11 +23,11 @@ public class CipherCareMainGUI{
         this.username = username;
         this.password = password;
         frame.setLayout(new GridBagLayout());
-        initializeUI(frame);
+        initializeUI();
         frame.setVisible(true);
     }
 
-    private void initializeUI(JFrame frame){
+    private void initializeUI(){
 
         String[] tables = {"patient", "medicalrecord", "appointment", "telehealth"};
         //JPanel datapanel = new JPanel();
@@ -43,7 +43,7 @@ public class CipherCareMainGUI{
         for(int i = 0; i < dataTable.getColumnCount(); i++){
             int estimate = ((String)dataTable.getModel().getValueAt(1, i)).length();
             if (estimate < 15){
-                columnModel.getColumn(i).setPreferredWidth(100);
+                columnModel.getColumn(i).setPreferredWidth(150);
             }
             else{
                 columnModel.getColumn(i).setPreferredWidth(300);
@@ -53,7 +53,6 @@ public class CipherCareMainGUI{
         scroll.setVisible(true);
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-
         JLabel resultsLabel = new JLabel("Results:");
         JLabel searchLabel = new JLabel("Enter Query:");
         JLabel columnLabel = new JLabel("Select Table:");
@@ -155,6 +154,35 @@ public class CipherCareMainGUI{
         });
     }
 
+    public void insertTable(){
+        dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        TableColumnModel columnModel = dataTable.getColumnModel();
+        for(int i = 0; i < dataTable.getColumnCount(); i++){
+            if(dataTable.getRowCount() <= 0){
+                columnModel.getColumn(i).setPreferredWidth(150);
+            }
+            else{
+                int estimate = ((String)dataTable.getModel().getValueAt(0, i)).length();
+                if (estimate < 15){
+                    columnModel.getColumn(i).setPreferredWidth(150);
+                }
+                else{
+                    columnModel.getColumn(i).setPreferredWidth(300);
+                }
+            }
+        }
+        scroll = new JScrollPane(dataTable);
+        scroll.setVisible(true);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        gbc.fill = GridBagConstraints.HORIZONTAL;  
+        gbc.gridx = 0;  
+        gbc.gridy = 3;
+        gbc.gridwidth = 5;
+        gbc.weightx = 1;
+        frame.add(scroll, gbc);
+    }
+
     public void refresh(){
             String table = tableSelect.getSelectedItem().toString();
             frame.remove(this.scroll);
@@ -162,37 +190,12 @@ public class CipherCareMainGUI{
             columnSelect = new JComboBox<String>(CipherCareSQL.getColumns(table, username, password));
             columnSelect.setBounds(180,100,120,40);
             dataTable = new JTable(CipherCareSQL.tableLookup(table, "", "", username, password));
-            dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-            TableColumnModel columnModel = dataTable.getColumnModel();
-            for(int i = 0; i < dataTable.getColumnCount(); i++){
-                if(dataTable.getRowCount() < 1){
-                    columnModel.getColumn(i).setPreferredWidth(100);
-                }
-                else{
-                    int estimate = ((String)dataTable.getModel().getValueAt(1, i)).length();
-                    if (estimate < 15){
-                        columnModel.getColumn(i).setPreferredWidth(100);
-                    }
-                    else{
-                        columnModel.getColumn(i).setPreferredWidth(300);
-                    }
-                }
-            }
-            scroll = new JScrollPane(dataTable);
-            scroll.setVisible(true);
-            scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-            scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
             gbc.gridx = 1;  
             gbc.gridy = 1;
             gbc.gridwidth = 1;
             gbc.weightx = 0.3;
             frame.add(columnSelect, gbc);
-            gbc.fill = GridBagConstraints.HORIZONTAL;  
-            gbc.gridx = 0;  
-            gbc.gridy = 3;
-            gbc.gridwidth = 5;
-            gbc.weightx = 1;
-            frame.add(scroll, gbc);
+            insertTable();
             frame.revalidate();
             frame.repaint();
     }
@@ -204,42 +207,24 @@ public class CipherCareMainGUI{
         try{
             frame.remove(this.scroll);
             dataTable = new JTable(CipherCareSQL.tableLookup(table, column, keyword, username, password));
-            dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-            TableColumnModel columnModel = dataTable.getColumnModel();
-            for(int i = 0; i < dataTable.getColumnCount(); i++){
-                if(dataTable.getRowCount() < 1){
-                    columnModel.getColumn(i).setPreferredWidth(100);
-                }
-                else{
-                    int estimate = ((String)dataTable.getModel().getValueAt(1, i)).length();
-                    if (estimate < 15){
-                        columnModel.getColumn(i).setPreferredWidth(100);
-                    }
-                    else{
-                        columnModel.getColumn(i).setPreferredWidth(300);
-                    }
-                }
-            }
-            scroll = new JScrollPane(dataTable);
-            scroll.setVisible(true);
-            scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-            scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-            gbc.fill = GridBagConstraints.HORIZONTAL;  
-            gbc.gridx = 0;  
-            gbc.gridy = 3;
-            gbc.gridwidth = 5;
-            gbc.weightx = 1;
-            frame.add(scroll, gbc);
+            insertTable();
             frame.revalidate();
             frame.repaint();
         }
         catch(Exception e){
             searchField.setText("Error searching for items: " + e.getMessage());
+            refresh();
         }
     }
 
     public void add(){
-        //TODO
+        //TODO.
+        //JFrame addFrame = new JFrame("Insert Into Database");
+        //addFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //addFrame.setSize(400, 650);
+        //addFrame.setLocationRelativeTo(null);
+        //addFrame.setLayout(new GridBagLayout());
+        //addFrame.setVisible(true);
     }
 
     public void remove(){
