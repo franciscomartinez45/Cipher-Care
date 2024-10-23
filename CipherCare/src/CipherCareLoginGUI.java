@@ -18,11 +18,11 @@ public class CipherCareLoginGUI{
         message.setBounds(50,50,300,35);
         JLabel userLabel = new JLabel("Username");
         userLabel.setBounds(50,100,150,30);
-        JTextField usernameField = new JTextField();
+        JTextField usernameField = new JTextField("root");
         usernameField.setBounds(150,100,150,30);
         JLabel passLabel = new JLabel("Password");
         passLabel.setBounds(50,150,150,30);
-        JPasswordField passwordField = new JPasswordField();
+        JPasswordField passwordField = new JPasswordField("password");
         passwordField.setBounds(150,150,150,30);
         JButton loginButton = new JButton("Log In");
         loginButton.setBounds(150,200,95,30);  

@@ -22,14 +22,36 @@ public class CipherCareSQL{
         }
     }
 
-    public static DefaultTableModel tableLookup(String keyword, String username, String password){
+    public static String[] getColumns(String table, String username, String password){
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/CipherCare", username, password);
-            //TODO: make table and column values alterable when forming the query
-            String query = "SELECT * FROM patient";
-            if (!(keyword.equals(""))){
-                query.concat(" WHERE PatientID LIKE %"+keyword+"%");
+            String query = "SELECT * FROM "+table;
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            ResultSetMetaData resultMetaData = resultSet.getMetaData();
+            String[] columns = new String[resultMetaData.getColumnCount()];
+            for(int i = 0; i < resultMetaData.getColumnCount(); i++){
+                columns[i] = resultMetaData.getColumnName(i+1);
+            }
+            resultSet.close();
+            preparedStatement.close();
+            connection.close();
+            return(columns);
+
+        }catch (Exception e) {
+            System.out.println("ERROR: "+e.getMessage());
+            return(null);
+        }
+    }
+
+    public static DefaultTableModel tableLookup(String table, String column, String keyword, String username, String password){
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/CipherCare", username, password);
+            String query = "SELECT * FROM "+table;
+            if (!(keyword.equals("")||column.equals(""))){
+                query = query.concat(" WHERE "+column+" LIKE '%"+keyword+"%'");
             }
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -56,6 +78,24 @@ public class CipherCareSQL{
         }catch (Exception e) {
             System.out.println("ERROR: "+e.getMessage());
             return(null);
+        }
+    }
+
+    public static void remove(String table, String column, String keyword, String username, String password){
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/CipherCare", username, password);
+            String query = "DELETE FROM "+table;
+            if (!(keyword.equals(""))){
+                query = "DELETE FROM "+table+" WHERE "+column+"='"+keyword+"'";
+            }
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.execute();
+            preparedStatement.close();
+            connection.close();
+
+        }catch (Exception e) {
+            System.out.println("ERROR: "+e.getMessage());
         }
     }
 
