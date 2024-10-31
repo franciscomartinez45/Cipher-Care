@@ -218,13 +218,9 @@ public class CipherCareMainGUI{
     }
 
     public void add(){
-        //TODO.
-        //JFrame addFrame = new JFrame("Insert Into Database");
-        //addFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //addFrame.setSize(400, 650);
-        //addFrame.setLocationRelativeTo(null);
-        //addFrame.setLayout(new GridBagLayout());
-        //addFrame.setVisible(true);
+        String table = tableSelect.getSelectedItem().toString();
+        new CipherCareAddGUI(username, password, table);
+
     }
 
     public void remove(){
