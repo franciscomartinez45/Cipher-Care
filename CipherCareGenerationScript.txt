@@ -54,7 +54,7 @@ ENGINE = InnoDB;
 -- Table `CipherCare`.`Telehealth`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `CipherCare`.`Telehealth` (
-  `telehealthID` INT NOT NULL,
+  `telehealthID` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
   `service` VARCHAR(150) NOT NULL,
   `contact` VARCHAR(150) NOT NULL,
@@ -162,4 +162,12 @@ VALUES
 ('null','null','28'),
 ('null','null','29'),
 ('Abuterol','Asthma','30');
+COMMIT;
+
+SET AUTOCOMMIT=0;
+INSERT INTO `CipherCare`.`Telehealth` (name, service, contact) VALUES
+('Mental Health Counseling', 'Counseling', 'Dr. Alice Smith'),
+('Nutrition Consultation', 'Nutrition', 'Nutritionist Emma Brown'),
+('Physical Therapy', 'Rehabilitation', 'Therapist Iris Martin'),
+('Chronic Disease Management', 'Chronic Care', 'Nurse Nancy Young');
 COMMIT;
