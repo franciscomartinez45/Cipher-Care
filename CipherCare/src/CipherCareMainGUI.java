@@ -1,7 +1,10 @@
 import javax.swing.*;
 import java.awt.event.*;
+import java.sql.SQLException;
+import java.util.Map;
 import java.awt.*;
 import javax.swing.table.*;
+import java.util.List;
 
 public class CipherCareMainGUI{
 
@@ -14,7 +17,7 @@ public class CipherCareMainGUI{
     private String password;
     private JFrame frame;
     private GridBagConstraints gbc;
-
+   
     public CipherCareMainGUI(String username, String password) {
         frame = new JFrame("Healthcare Database");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -26,20 +29,21 @@ public class CipherCareMainGUI{
         initializeUI();
         frame.setVisible(true);
     }
-
+ 
     private void initializeUI(){
 
         String[] tables = {"patient", "medicalrecord", "appointment", "telehealth"};
-        //JPanel datapanel = new JPanel();
+       
         gbc = new GridBagConstraints();
         tableSelect = new JComboBox<String>(tables);
         columnSelect = new JComboBox<String>(CipherCareSQL.getColumns("patient", username, password));
         searchField = new JTextField();
         JButton searchB = new JButton("Search");
-
+        
         dataTable = new JTable(CipherCareSQL.tableLookup("patient", "","", username, password));
         dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         TableColumnModel columnModel = dataTable.getColumnModel();
+        dataTable.setColumnSelectionAllowed(false);
         for(int i = 0; i < dataTable.getColumnCount(); i++){
             int estimate = ((String)dataTable.getModel().getValueAt(1, i)).length();
             if (estimate < 15){
@@ -58,6 +62,7 @@ public class CipherCareMainGUI{
         JLabel columnLabel = new JLabel("Select Table:");
         JLabel tableLabel = new JLabel("Select Column:");
         JButton addB = new JButton("Add Data");
+        JButton addServiceB = new JButton("Add Telehealth Service");
         JButton removeB = new JButton("Remove Data");
         JButton updateB = new JButton("Update Data");
         JButton refreshB = new JButton("Refresh Data");
@@ -114,8 +119,21 @@ public class CipherCareMainGUI{
         frame.add(removeB, gbc);
         gbc.gridx = 3;  
         gbc.gridy = 16;
+        frame.add(addServiceB,gbc);
+        gbc.gridx = 4;
+        gbc.gridy = 16;
         frame.add(refreshB, gbc);
+        gbc.gridx = 5;
+        gbc.gridy = 16;
+        
 
+        addServiceB.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if(dataTable.getSelectedRow()!=-1){
+                service(String.valueOf(dataTable.getSelectedRow()));
+                }
+            }
+        });
 
         searchB.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -147,9 +165,10 @@ public class CipherCareMainGUI{
             }
         });
 
+      
         updateB.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                update();
+                
             }
         });
     }
@@ -182,7 +201,7 @@ public class CipherCareMainGUI{
         gbc.weightx = 1;
         frame.add(scroll, gbc);
     }
-
+   
     public void refresh(){
             String table = tableSelect.getSelectedItem().toString();
             frame.remove(this.scroll);
@@ -218,13 +237,13 @@ public class CipherCareMainGUI{
     }
 
     public void add(){
-        //TODO.
-        //JFrame addFrame = new JFrame("Insert Into Database");
-        //addFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //addFrame.setSize(400, 650);
-        //addFrame.setLocationRelativeTo(null);
-        //addFrame.setLayout(new GridBagLayout());
-        //addFrame.setVisible(true);
+        
+        JFrame addFrame = new JFrame("Insert Into Database");
+        addFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        addFrame.setSize(400, 650);
+        addFrame.setLocationRelativeTo(null);
+        addFrame.setLayout(new GridBagLayout());
+        addFrame.setVisible(true);
     }
 
     public void remove(){
@@ -239,8 +258,159 @@ public class CipherCareMainGUI{
         
     }
 
-    public void update(){
+    public void update(int selectedRow){
         //TODO
     }
+
+
+    //Create JFrame
+    public void service(String patientID) {
+    JFrame serviceFrame = new JFrame("Select a Telehealth service");
+    serviceFrame.setSize(400, 650);
+    serviceFrame.setLocationRelativeTo(null);
+    serviceFrame.setLayout(new GridBagLayout());
+
+    GridBagConstraints gbcservice = new GridBagConstraints();
+    gbcservice.fill = GridBagConstraints.HORIZONTAL;
+    gbcservice.insets = new Insets(10, 10, 10, 10);
+    
+    //Display the patient information
+    JLabel information = new JLabel("Patient information:");
+    gbcservice.gridx = 0;
+    gbcservice.gridy = 0;
+    gbcservice.gridwidth = 2;
+    serviceFrame.add(information, gbcservice);
+
+    try {
+        //Retrieve the patient information
+        Map<String, String> data = CipherCareSQL.getPatientColumn(patientID, username,password); 
+        if (data != null) {
+            int row = 1;
+            //Map to iterate through key, value pairs
+           for (Map.Entry<String, String> entry : data.entrySet()) {
+                gbcservice.gridwidth = 1; 
+                gbcservice.gridx = 0;
+                gbcservice.gridy = row;
+                serviceFrame.add(new JLabel(entry.getKey() + ":"), gbcservice);
+                gbcservice.gridx = 1;
+                serviceFrame.add(new JLabel(entry.getValue()), gbcservice);
+                row++;
+            }
+        } else {
+            gbcservice.gridwidth = 2;
+            gbcservice.gridx = 0;
+            gbcservice.gridy = 1;
+            serviceFrame.add(new JLabel("No patient found with ID: " + patientID), gbcservice);
+        }
+    } catch (ClassNotFoundException | SQLException e) {
+        e.printStackTrace();
+        gbcservice.gridwidth = 2;
+        gbcservice.gridx = 0;
+        gbcservice.gridy = 1;
+        serviceFrame.add(new JLabel("Error fetching patient data"), gbcservice);
+    }
+    //Button to assign a Telehealth Service
+    JButton addAppointmentButton = new JButton("Add Appointment");
+    addAppointmentButton.addActionListener(e -> {
+        createAppointmentForm(patientID);
+    });
+    
+    gbcservice.gridwidth = 2;
+    gbcservice.gridx = 0;
+    gbcservice.gridy++;
+    serviceFrame.add(addAppointmentButton, gbcservice);
+    serviceFrame.setVisible(true);
+}
+
+//Create appointment form 
+private void createAppointmentForm(String patientID) {
+   
+    JFrame appointmentFrame = new JFrame("Create Appointment");
+    appointmentFrame.setSize(400, 400);
+    appointmentFrame.setLocationRelativeTo(null);
+    appointmentFrame.setLayout(new GridBagLayout());
+
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.insets = new Insets(10, 10, 10, 10);
+
+    //Style the JFrame
+    JLabel information = new JLabel("Create Appointment for Patient ID: " + patientID);
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.gridwidth = 2;
+    appointmentFrame.add(information, gbc);
+
+    
+    JLabel dateLabel = new JLabel("Date:");
+    gbc.gridwidth = 1;
+    gbc.gridy++;
+    appointmentFrame.add(dateLabel, gbc);
+    
+    JTextField dateField = new JTextField(10);
+    gbc.gridx = 1;
+    appointmentFrame.add(dateField, gbc);
+   
+    
+    JLabel startTimeLabel = new JLabel("Start Time:");
+    gbc.gridx = 0;
+    gbc.gridy++;
+    appointmentFrame.add(startTimeLabel, gbc);
+    
+    JTextField startTimeField = new JTextField(10);
+    gbc.gridx = 1;
+    appointmentFrame.add(startTimeField, gbc);
+
+   
+    JLabel endTimeLabel = new JLabel("End Time:");
+    gbc.gridx = 0;
+    gbc.gridy++;
+    appointmentFrame.add(endTimeLabel, gbc);
+    
+    JTextField endTimeField = new JTextField(10);
+    gbc.gridx = 1;
+    appointmentFrame.add(endTimeField, gbc);
+
+    //Drop Down menu to select telehealth service
+    JLabel serviceLabel = new JLabel("Select Telehealth Service:");
+    gbc.gridx = 0;
+    gbc.gridy++;
+    appointmentFrame.add(serviceLabel, gbc);
+    
+    JComboBox<String> serviceComboBox = new JComboBox<>();
+    try {
+        //Get Telehealth services as a list
+        List<String> services =  CipherCareSQL.getTelehealthServices(username, password);
+        for (String service : services) {
+            serviceComboBox.addItem(service);
+        }
+    } catch (ClassNotFoundException | SQLException e) {
+        e.printStackTrace();
+    }
+    gbc.gridx = 1;
+    appointmentFrame.add(serviceComboBox, gbc);
+    
+    //Button to insert data
+    JButton submitButton = new JButton("Create Appointment");
+    submitButton.addActionListener(e -> {
+        String date = dateField.getText();
+        String startTime = startTimeField.getText();
+        String endTime = endTimeField.getText();
+        String selectedService = (String) serviceComboBox.getSelectedItem();
+        try {
+
+            CipherCareSQL.saveAppointment(patientID, selectedService, date, startTime, endTime,username,password);
+            JOptionPane.showMessageDialog(appointmentFrame, "Appointment Created Successfully!");
+            appointmentFrame.dispose(); 
+        } catch (Exception error) {
+            JOptionPane.showMessageDialog(appointmentFrame, "Error creating appointment: " + error.getMessage());
+            error.printStackTrace();
+        }
+    });
+    gbc.gridwidth = 2;
+    gbc.gridy++;
+    appointmentFrame.add(submitButton, gbc);
+    appointmentFrame.setVisible(true);
+}
 
 }
