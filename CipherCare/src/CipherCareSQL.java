@@ -1,11 +1,10 @@
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.table.DefaultTableModel;
+
 
 public class CipherCareSQL{
 
@@ -17,13 +16,15 @@ public class CipherCareSQL{
             for(char c: pass){
                 password += c;
             }
-            Connection connection = DriverManager.getConnection(url, user, password);
+            Connection connection = DriverManager.getConnection(url, "root", "Mimie123!");
 
             System.out.println("Connection Secured");
             connection.close();
             return(true);
 
         }catch (Exception e) {
+            System.out.println(e.toString());
+        
             return(false);
         }
     }

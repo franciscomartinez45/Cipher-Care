@@ -23,6 +23,7 @@ public class CipherCareMainGUI{
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1000, 600);
         frame.setLocationRelativeTo(null);
+        
         this.username = username;
         this.password = password;
         frame.setLayout(new GridBagLayout());
@@ -358,6 +359,7 @@ private void createAppointmentForm(String patientID) {
     appointmentFrame.add(startTimeLabel, gbc);
     
     JTextField startTimeField = new JTextField(10);
+    
     gbc.gridx = 1;
     appointmentFrame.add(startTimeField, gbc);
 

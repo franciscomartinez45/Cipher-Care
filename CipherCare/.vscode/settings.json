@@ -1,9 +1,8 @@
 {
-    "java.project.sourcePaths": ["src"],
-    "java.project.outputPath": "bin",
-    "java.project.referencedLibraries": [
-        "lib/**/*.jar",
-        "c:\\Users\\Joshu\\Desktop\\mysql-connector-j-9.0.0.jar",
-        "c:\\Users\\Joshu\\Desktop\\the egg is in the box\\mysql-connector-j-9.0.0.jar"
-    ]
+  "java.project.sourcePaths": ["src"],
+  "java.project.outputPath": "bin",
+  "java.project.referencedLibraries": [
+    "lib/*.jar",
+    "C:/Users/Frncsc/OneDrive/Desktop/Fall 2024/CSC 481/481Cipher-Care/CipherCare/lib/mysql-connector-j-9.0.0.jar"
+  ]
 }
