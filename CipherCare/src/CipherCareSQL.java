@@ -16,7 +16,7 @@ public class CipherCareSQL{
             for(char c: pass){
                 password += c;
             }
-            Connection connection = DriverManager.getConnection(url, "root", "Mimie123!");
+            Connection connection = DriverManager.getConnection(url, user,password);
 
             System.out.println("Connection Secured");
             connection.close();
@@ -132,7 +132,7 @@ public static void saveAppointment(String patientID, String telehealthService, S
             Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/CipherCare", username, password);
             String query = "SELECT * FROM "+ table;
             if (!(keyword.equals("")||column.equals(""))){
-                query = query.concat(" WHERE "+column+" LIKE '%"+keyword+"%'");
+                query = query.concat(" WHERE "+column+" IN("+keyword+")");
             }
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             ResultSet resultSet = preparedStatement.executeQuery();

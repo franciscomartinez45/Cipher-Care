@@ -1,6 +1,9 @@
 import javax.swing.*;
 import java.awt.event.*;
+import java.util.Date;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.awt.*;
 import javax.swing.table.*;
@@ -21,7 +24,7 @@ public class CipherCareMainGUI{
     public CipherCareMainGUI(String username, String password) {
         frame = new JFrame("Healthcare Database");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1000, 600);
+        frame.setSize(1090, 600);
         frame.setLocationRelativeTo(null);
         
         this.username = username;
@@ -47,16 +50,19 @@ public class CipherCareMainGUI{
         dataTable.setColumnSelectionAllowed(false);
         for(int i = 0; i < dataTable.getColumnCount(); i++){
             int estimate = ((String)dataTable.getModel().getValueAt(1, i)).length();
+    
             if (estimate < 15){
                 columnModel.getColumn(i).setPreferredWidth(150);
             }
             else{
                 columnModel.getColumn(i).setPreferredWidth(300);
             }
+        
         }
+        System.out.println(columnSelect);
         scroll = new JScrollPane(dataTable);
         scroll.setVisible(true);
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        // scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         JLabel resultsLabel = new JLabel("Results:");
         JLabel searchLabel = new JLabel("Enter Query:");
@@ -205,6 +211,7 @@ public class CipherCareMainGUI{
    
     public void refresh(){
             String table = tableSelect.getSelectedItem().toString();
+           
             frame.remove(this.scroll);
             frame.remove(this.columnSelect);
             columnSelect = new JComboBox<String>(CipherCareSQL.getColumns(table, username, password));
@@ -224,6 +231,7 @@ public class CipherCareMainGUI{
         String keyword = searchField.getText();
         String column = columnSelect.getSelectedItem().toString();
         String table = tableSelect.getSelectedItem().toString();
+    
         try{
             frame.remove(this.scroll);
             dataTable = new JTable(CipherCareSQL.tableLookup(table, column, keyword, username, password));
@@ -267,7 +275,7 @@ public class CipherCareMainGUI{
     //Create JFrame
     public void service(String patientID) {
     JFrame serviceFrame = new JFrame("Select a Telehealth service");
-    serviceFrame.setSize(400, 650);
+    serviceFrame.setSize(400, 400);
     serviceFrame.setLocationRelativeTo(null);
     serviceFrame.setLayout(new GridBagLayout());
 
@@ -297,6 +305,7 @@ public class CipherCareMainGUI{
                 serviceFrame.add(new JLabel(entry.getValue()), gbcservice);
                 row++;
             }
+
         } else {
             gbcservice.gridwidth = 2;
             gbcservice.gridx = 0;
@@ -343,7 +352,7 @@ private void createAppointmentForm(String patientID) {
     appointmentFrame.add(information, gbc);
 
     
-    JLabel dateLabel = new JLabel("Date:");
+    JLabel dateLabel = new JLabel("Date(YYYY-MM-DD):");
     gbc.gridwidth = 1;
     gbc.gridy++;
     appointmentFrame.add(dateLabel, gbc);
@@ -353,7 +362,7 @@ private void createAppointmentForm(String patientID) {
     appointmentFrame.add(dateField, gbc);
    
     
-    JLabel startTimeLabel = new JLabel("Start Time:");
+    JLabel startTimeLabel = new JLabel("Start Time(HH:MM AM/PM):");
     gbc.gridx = 0;
     gbc.gridy++;
     appointmentFrame.add(startTimeLabel, gbc);
@@ -364,7 +373,7 @@ private void createAppointmentForm(String patientID) {
     appointmentFrame.add(startTimeField, gbc);
 
    
-    JLabel endTimeLabel = new JLabel("End Time:");
+    JLabel endTimeLabel = new JLabel("End Time(HH:MM AM/PM):");
     gbc.gridx = 0;
     gbc.gridy++;
     appointmentFrame.add(endTimeLabel, gbc);
@@ -394,25 +403,124 @@ private void createAppointmentForm(String patientID) {
     
     //Button to insert data
     JButton submitButton = new JButton("Create Appointment");
-    submitButton.addActionListener(e -> {
-        String date = dateField.getText();
-        String startTime = startTimeField.getText();
-        String endTime = endTimeField.getText();
-        String selectedService = (String) serviceComboBox.getSelectedItem();
-        try {
+  submitButton.addActionListener(e -> {
+    String date = dateField.getText();
+    String startTime = startTimeField.getText();
+    String endTime = endTimeField.getText();
+    String selectedService = (String) serviceComboBox.getSelectedItem();
 
-            CipherCareSQL.saveAppointment(patientID, selectedService, date, startTime, endTime,username,password);
-            JOptionPane.showMessageDialog(appointmentFrame, "Appointment Created Successfully!");
-            appointmentFrame.dispose(); 
-        } catch (Exception error) {
-            JOptionPane.showMessageDialog(appointmentFrame, "Error creating appointment: " + error.getMessage());
-            error.printStackTrace();
-        }
-    });
+    
+    boolean validFields = true;
+
+    
+    if (!isValidDate(date)) {
+        dateField.setBackground(Color.RED);
+        JOptionPane.showMessageDialog(appointmentFrame, "Invalid date.");
+        validFields = false; 
+    } else {
+        dateField.setBackground(Color.GREEN);
+    }
+
+   
+    if (!isValidTime(startTime)) {
+        startTimeField.setBackground(Color.RED);
+        JOptionPane.showMessageDialog(appointmentFrame, "Invalid start time format. Please use HH:MM AM/PM");
+        validFields = false; 
+    } else if (!isWithinBusinessHours(startTime)) {
+        startTimeField.setBackground(Color.RED);
+        JOptionPane.showMessageDialog(appointmentFrame, "Start time must be within business hours (8:00 AM - 5:00 PM).");
+        validFields = false; 
+    } else {
+        startTimeField.setBackground(Color.GREEN);
+    }
+
+    
+    if (!isValidTime(endTime)) {
+        endTimeField.setBackground(Color.RED);
+        JOptionPane.showMessageDialog(appointmentFrame, "Invalid end time format. Please use HH:MM AM/PM");
+        validFields = false; 
+    } else if (!isWithinBusinessHours(endTime)) {
+        endTimeField.setBackground(Color.RED);
+        JOptionPane.showMessageDialog(appointmentFrame, "End time must be within business hours (8:00 AM - 5:00 PM).");
+        validFields = false; 
+    } else {
+        endTimeField.setBackground(Color.GREEN);
+    }
+
+   
+    if (!isValidTimeRange(startTime, endTime)) {
+        startTimeField.setBackground(Color.RED);
+        endTimeField.setBackground(Color.RED);
+        JOptionPane.showMessageDialog(appointmentFrame, "Start time must be at least 30 minutes before end time.");
+        validFields = false; 
+    }
+
+  
+    if (!validFields) {
+        return; 
+    }
+
+
+    try {
+        CipherCareSQL.saveAppointment(patientID, selectedService, date, startTime, endTime, username, password);
+        JOptionPane.showMessageDialog(appointmentFrame, "Appointment Created Successfully!");
+        appointmentFrame.dispose();
+    } catch (Exception error) {
+        JOptionPane.showMessageDialog(appointmentFrame, "Error creating appointment: " + error.getMessage());
+        error.printStackTrace();
+    }
+});
+
     gbc.gridwidth = 2;
     gbc.gridy++;
     appointmentFrame.add(submitButton, gbc);
     appointmentFrame.setVisible(true);
 }
 
+
+ public static boolean isValidDate(String date) {
+    SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd");
+    dateformat.setLenient(false);
+    try {  
+        Date parsedDate = dateformat.parse(date);
+        Date currentDate = dateformat.parse(dateformat.format(new Date()));
+        return !parsedDate.before(currentDate);
+    } catch (ParseException e) {
+        return false; 
+    }
+}
+public static boolean isValidTime(String time) {
+        SimpleDateFormat dateformat = new SimpleDateFormat("hh:mm a");
+        dateformat.setLenient(false);
+        try {
+            Date parsedTime = dateformat.parse(time);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+     public static boolean isValidTimeRange(String startTime, String endTime) {
+        SimpleDateFormat dateformat = new SimpleDateFormat("hh:mm a");
+        try {
+            Date start = dateformat.parse(startTime);
+            Date end = dateformat.parse(endTime);
+            long differenceInMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+            return differenceInMinutes >= 30;
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+    public static boolean isWithinBusinessHours(String time) {
+        SimpleDateFormat dateformat = new SimpleDateFormat("hh:mm a");
+        try {
+            Date inputTime = dateformat.parse(time);
+            Date businessStart = dateformat.parse("8:00 AM");
+            Date businessEnd = dateformat.parse("5:00 PM");
+
+            return inputTime.equals(businessStart) || inputTime.equals(businessEnd) ||
+                   (inputTime.after(businessStart) && inputTime.before(businessEnd));
+        } catch (ParseException e) {
+            return false;
+        }
+    }
 }
