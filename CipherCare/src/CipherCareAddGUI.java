@@ -1,152 +1,184 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.sql.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 public class CipherCareAddGUI {
-
-    private String username;
-    private String password;
     private JFrame frame;
     private JTextField dobField;
-    private JTextField phoneField;
     private JTextField addressField;
     private JTextField emailField;
-    private JTextField prescriptionField;
-    private JTextField conditionField;
-    private GridBagConstraints gbc;
+    private JTextField phoneField;
 
-    public CipherCareAddGUI(String username, String password, String table) {
-        frame = new JFrame("Healthcare Database");
-        //frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    // No-argument constructor
+    public CipherCareAddGUI() {
+        setupGUI();
+    }
+
+    // Constructor with arguments to pre-fill data
+    public CipherCareAddGUI(String dob, String address, String email) {
+        setupGUI();
+        dobField.setText(dob);
+        addressField.setText(address);
+        emailField.setText(email);
+    }
+
+    // Method to initialize GUI components
+    private void setupGUI() {
+        // Set up the frame
+        frame = new JFrame("CipherCare - Add Patient");
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setSize(500, 400);
         frame.setLocationRelativeTo(null);
-        this.username = username;
-        this.password = password;
         frame.setLayout(new GridBagLayout());
-        initializeUI(table);
+
+        initializeUI();
         frame.setVisible(true);
     }
 
-    private void initializeUI(String table){
-        GridBagConstraints constraints = new GridBagConstraints();
-        JButton commitB = new JButton("Add Data");
+    private void initializeUI() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        if (table.equals("patient") || table.equals("medicalrecord")){
-            JLabel emailLabel = new JLabel("Patient Email:");
-            emailField = new JTextField();
-            JLabel phoneLabel = new JLabel("Patient Phone Number:");
-            phoneField = new JTextField();
-            JLabel dobLabel = new JLabel("Patient Date of Birth:");
-            dobField = new JTextField();
-            JLabel addressLabel = new JLabel("Patient Address:");
-            addressField = new JTextField();
-            JLabel prescriptionLabel = new JLabel("Current Patient Prescriptions:");
-            prescriptionField = new JTextField();
-            JLabel conditionLabel = new JLabel("Current Patient Medical Conditions:");
-            conditionField = new JTextField();
-        
-            constraints.fill = GridBagConstraints.HORIZONTAL;  
-            constraints.gridx = 0;  
-            constraints.gridy = 0;
-            frame.add(dobLabel, constraints);
-            constraints.gridx = 1;  
-            constraints.gridy = 0;
-            frame.add(addressLabel, constraints);
-            constraints.fill = GridBagConstraints.HORIZONTAL;  
-            constraints.gridx = 0;  
-            constraints.gridy = 1;
-            frame.add(dobField, constraints);
-            constraints.gridx = 1;  
-            constraints.gridy = 1;
-            frame.add(addressField, constraints);
-            constraints.fill = GridBagConstraints.HORIZONTAL;  
-            constraints.gridx = 0;  
-            constraints.gridy = 2;
-            frame.add(emailLabel, constraints);
-            constraints.gridx = 1;  
-            constraints.gridy = 2;
-            frame.add(phoneLabel, constraints);
-            constraints.fill = GridBagConstraints.HORIZONTAL;  
-            constraints.gridx = 0;  
-            constraints.gridy = 3;
-            frame.add(emailField, constraints);
-            constraints.gridx = 1;  
-            constraints.gridy = 3;
-            frame.add(phoneField, constraints);
-            constraints.fill = GridBagConstraints.HORIZONTAL;  
-            constraints.gridx = 0;  
-            constraints.gridy = 4;
-            frame.add(conditionLabel, constraints);
-            constraints.gridx = 1;  
-            constraints.gridy = 4;
-            frame.add(prescriptionLabel, constraints);
-            constraints.fill = GridBagConstraints.HORIZONTAL;  
-            constraints.gridx = 0;  
-            constraints.gridy = 5;
-            frame.add(conditionField, constraints);
-            constraints.gridx = 1;  
-            constraints.gridy = 5;
-            frame.add(prescriptionField, constraints);
-            constraints.fill = GridBagConstraints.HORIZONTAL;  
-            constraints.gridx = 0;  
-            constraints.gridy = 6;
-            constraints.gridwidth = 2;
-            frame.add(commitB, constraints);
-        }
-        else if(table.equals("appointment")){
+        // Patient Date of Birth Field (small size)
+        JLabel dobLabel = new JLabel("Patient Date of Birth (dd-mm-yyyy):");
+        dobField = new JTextField(10); // Smaller size for Date of Birth
 
-        }
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        frame.add(dobLabel, gbc);
 
-        commitB.addActionListener(new ActionListener() {
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        frame.add(dobField, gbc);
+
+        // Patient Address Field (larger size)
+        JLabel addressLabel = new JLabel("Patient Address:");
+        addressField = new JTextField(20); // Larger size for Address
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        frame.add(addressLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        frame.add(addressField, gbc);
+
+        // Patient Email Field (larger size)
+        JLabel emailLabel = new JLabel("Patient Email:");
+        emailField = new JTextField(20); // Larger size for Email
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        frame.add(emailLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        frame.add(emailField, gbc);
+
+        // Patient Phone Number Field (larger size)
+        JLabel phoneLabel = new JLabel("Patient Phone Number:");
+        phoneField = new JTextField(15); // Larger size for Phone Number
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        frame.add(phoneLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        frame.add(phoneField, gbc);
+
+        // Add Patient Button
+        JButton addPatientButton = new JButton("Add Patient");
+        addPatientButton.setToolTipText("Click to add a new patient");
+        addPatientButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    add();
-                } catch (ClassNotFoundException ex) {
-                    ex.printStackTrace();
-                }
+                addPatient();
             }
         });
-        
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        frame.add(addPatientButton, gbc);
     }
 
-    private void add() throws ClassNotFoundException{
-        String dob = dobField.getText();
-        String address = addressField.getText();
-        String phone = phoneField.getText();
-        String email = emailField.getText();
-        String condition = conditionField.getText();
-        String prescription = prescriptionField.getText();
-        if(dob.equals("") || address.equals("") || (phone.equals("") && email.equals(""))){
-            JOptionPane.showMessageDialog(frame, "Please fill in all required fields: Date Of Birth, Address, Phone Number, and Email.");
+    private void addPatient() {
+        // Get input data from fields
+        String dob = dobField.getText().trim();
+        String address = addressField.getText().trim();
+        String email = emailField.getText().trim();
+        String phone = phoneField.getText().trim();
+
+        // Validate and process the data
+        if (dob.isEmpty() || address.isEmpty() || email.isEmpty() || phone.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "All fields must be filled out.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        else{
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            String url = "jdbc:mysql://localhost:3306/CipherCare";
-            try(Connection con = DriverManager.getConnection(url,username, password)){
-                String query = ("INSERT INTO Patient(PatientDoB, PatientEmail, PatientPhone, PatientAddress) VALUES(?,?,?,?)");
-                try(PreparedStatement statement = con.prepareStatement(query)){
-                    statement.setString(1,dob);
-                    statement.setString(2, email);
-                    statement.setString(3, phone);
-                    statement.setString(4, address);
 
-                    int updateRows = statement.executeUpdate();
-                    if(updateRows > 0){
-                        JOptionPane.showMessageDialog(frame, "Data inserted successfully");
-                    }else{
-                        JOptionPane.showMessageDialog(frame, "Faild to insert data");
-                    }
-                }
-            }catch(SQLException ex){
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(frame, "Error:" +ex.getMessage());
-
+        try {
+            // Format date of birth to YYYY-MM-DD (required by MySQL)
+            String formattedDob = dob.replaceAll("-", "/");
+            String[] dateParts = formattedDob.split("/");
+            if (dateParts.length == 3) {
+                formattedDob = dateParts[2] + "-" + dateParts[1] + "-" + dateParts[0];
+            } else {
+                JOptionPane.showMessageDialog(frame, "Date format should be dd-mm-yyyy.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
+            // Save the patient information to the database
+            Connection connection = CipherCareSQL.getConnection(); // Assuming CipherCareSQL has a method to get DB connection
+            String query = "INSERT INTO Patient (PatientDoB, patientAddress, patientEmail, patientPhone) VALUES (?, ?, ?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            formattedDob = CipherCareEncryption.encrypt(formattedDob);
+            address = CipherCareEncryption.encrypt(address);
+            email = CipherCareEncryption.encrypt(email);
+            phone = CipherCareEncryption.encrypt(phone);
+            preparedStatement.setString(1, formattedDob);
+            preparedStatement.setString(2, address);
+            preparedStatement.setString(3, email);
+            preparedStatement.setString(4, phone);
+            preparedStatement.executeUpdate();
+
+            query = "SELECT patientID FROM patient WHERE PatientDoB = ? AND patientAddress = ? AND patientEmail = ? AND patientPhone = ?";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, formattedDob);
+            preparedStatement.setString(2, address);
+            preparedStatement.setString(3, email);
+            preparedStatement.setString(4, phone);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            String patientID = resultSet.getString("patientID");
+
+            preparedStatement = connection.prepareStatement("INSERT INTO medicalrecord (PatientID, prescription, medicalCondition) VALUES (?, null, null)");
+            preparedStatement.setString(1, patientID);
+            preparedStatement.executeUpdate();
+
+            preparedStatement.close();
+            connection.close();
+
+            JOptionPane.showMessageDialog(frame, "Patient added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            // Clear the fields after successful addition
+            dobField.setText("");
+            addressField.setText("");
+            emailField.setText("");
+            phoneField.setText("");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame, "Failed to add patient. Error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
-        
     }
+
 
 }

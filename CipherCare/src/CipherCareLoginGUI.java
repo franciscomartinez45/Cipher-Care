@@ -1,54 +1,113 @@
 import javax.swing.*;
-import java.awt.event.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-public class CipherCareLoginGUI{
+public class CipherCareLoginGUI {
+    private JFrame frame;
+    private JTextField usernameField;
+    private JPasswordField passwordField;
 
     public CipherCareLoginGUI() {
-        JFrame frame = new JFrame("Database Login");
+        // Set up Nimbus Look and Feel
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Set up the frame
+        frame = new JFrame("CipherCare - Login");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 300);
         frame.setLocationRelativeTo(null);
-        initializeUI(frame);
-        frame.setLayout(null);
+        frame.setLayout(new GridBagLayout());
+
+        initializeUI();
         frame.setVisible(true);
     }
 
-    private void initializeUI(JFrame frame) {
-        JLabel message = new JLabel("Please enter your username and password");
-        message.setBounds(50,50,300,35);
-        JLabel userLabel = new JLabel("Username");
-        userLabel.setBounds(50,100,150,30);
-        JTextField usernameField = new JTextField("root");
-        usernameField.setBounds(150,100,150,30);
-        JLabel passLabel = new JLabel("Password");
-        passLabel.setBounds(50,150,150,30);
-        JPasswordField passwordField = new JPasswordField("password");
-        passwordField.setBounds(150,150,150,30);
-        JButton loginButton = new JButton("Log In");
-        loginButton.setBounds(150,200,95,30);  
-        frame.add(message);
-        frame.add(userLabel);
-        frame.add(usernameField);
-        frame.add(passLabel);
-        frame.add(passwordField);
-        frame.add(loginButton);
+    private void initializeUI() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Username Label and Field
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameField = new JTextField("", 15);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        frame.add(usernameLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        frame.add(usernameField, gbc);
+
+        // Password Label and Field
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordField = new JPasswordField("", 15);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.LINE_END;
+        frame.add(passwordLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        frame.add(passwordField, gbc);
+
+        // Login Button
+        JButton loginButton = new JButton("Login");
         loginButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                boolean isValid = CipherCareSQL.testConnection(usernameField.getText(), passwordField.getPassword());
-                if(isValid){
-                    String password = "";
-                    for(char c: passwordField.getPassword()){
-                        password += c;
-                    }
-                    new CipherCareMainGUI(usernameField.getText(), password);
-                    frame.dispose();
-                }
-                else{
-                    message.setText("ERROR: INVALID USERNAME AND PASSWORD");
-                }
+                authenticateUser();
             }
         });
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        frame.add(loginButton, gbc);
     }
 
+    private void authenticateUser() {
+        // Get the input values
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword()).trim();
+
+        // Validate that fields are not empty
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Both fields must be filled out.", "Login Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Connect to the database and check credentials
+        try (Connection connection = CipherCareSQL.getConnection()) {
+            String query = "SELECT * FROM Users WHERE username = ? AND password = ?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, username);
+                preparedStatement.setString(2, password);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        JOptionPane.showMessageDialog(frame, "Login successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        frame.dispose(); // Close login window on success
+                        new CipherCareMainGUI(username, password); // Open main GUI
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "Invalid credentials. Please try again.", "Login Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(frame, "Database error: " + e.getMessage(), "Login Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
 }

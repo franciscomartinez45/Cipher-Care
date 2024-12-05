@@ -1,526 +1,409 @@
 import javax.swing.*;
-import java.awt.event.*;
-import java.util.Date;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Map;
 import java.awt.*;
-import javax.swing.table.*;
-import java.util.List;
+import java.awt.event.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.swing.table.DefaultTableModel;
 
-public class CipherCareMainGUI{
-
-    private JTextField searchField;
-    private JComboBox<String> columnSelect;
-    private JComboBox<String> tableSelect;
-    private JTable dataTable;
-    private JScrollPane scroll;
-    private String username;
-    private String password;
+public class CipherCareMainGUI {
     private JFrame frame;
-    private GridBagConstraints gbc;
-   
+    private JTable table;
+    private DefaultTableModel model;
+
     public CipherCareMainGUI(String username, String password) {
-        frame = new JFrame("Healthcare Database");
+
+        // Set up the frame
+        frame = new JFrame("CipherCare - Main");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1090, 600);
+        frame.setSize(800, 600);
         frame.setLocationRelativeTo(null);
-        
-        this.username = username;
-        this.password = password;
-        frame.setLayout(new GridBagLayout());
+        frame.setLayout(new BorderLayout());
+
         initializeUI();
         frame.setVisible(true);
     }
- 
-    private void initializeUI(){
 
-        String[] tables = {"patient", "medicalrecord", "appointment", "telehealth"};
-       
-        gbc = new GridBagConstraints();
-        tableSelect = new JComboBox<String>(tables);
-        columnSelect = new JComboBox<String>(CipherCareSQL.getColumns("patient", username, password));
-        searchField = new JTextField();
-        JButton searchB = new JButton("Search");
-        
-        dataTable = new JTable(CipherCareSQL.tableLookup("patient", "","", username, password));
-        dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        TableColumnModel columnModel = dataTable.getColumnModel();
-        dataTable.setColumnSelectionAllowed(false);
-        for(int i = 0; i < dataTable.getColumnCount(); i++){
-            int estimate = ((String)dataTable.getModel().getValueAt(1, i)).length();
-    
-            if (estimate < 15){
-                columnModel.getColumn(i).setPreferredWidth(150);
-            }
-            else{
-                columnModel.getColumn(i).setPreferredWidth(300);
-            }
-        
-        }
-        System.out.println(columnSelect);
-        scroll = new JScrollPane(dataTable);
-        scroll.setVisible(true);
-        // scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        JLabel resultsLabel = new JLabel("Results:");
-        JLabel searchLabel = new JLabel("Enter Query:");
-        JLabel columnLabel = new JLabel("Select Table:");
-        JLabel tableLabel = new JLabel("Select Column:");
-        JButton addB = new JButton("Add Data");
-        JButton addServiceB = new JButton("Add Telehealth Service");
-        JButton removeB = new JButton("Remove Data");
-        JButton updateB = new JButton("Update Data");
-        JButton refreshB = new JButton("Refresh Data");
-        
-        gbc.fill = GridBagConstraints.HORIZONTAL;  
-        gbc.gridx = 0;  
-        gbc.gridy = 0;
-        frame.add(tableLabel, gbc);
-        gbc.gridx = 1;  
-        gbc.gridy = 0;
-        frame.add(columnLabel, gbc);
-        gbc.gridx = 2;  
-        gbc.gridy = 0;
-        frame.add(searchLabel, gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL;  
-        gbc.gridx = 0;  
-        gbc.gridy = 1;
-        gbc.weightx = 0.1;
-        frame.add(tableSelect, gbc);
-        gbc.gridx = 1;  
-        gbc.gridy = 1;
-        gbc.weightx = 0.3;
-        frame.add(columnSelect, gbc);
-        gbc.gridx = 2;  
-        gbc.gridy = 1;
-        gbc.weightx = 0.5;
-        frame.add(searchField, gbc);
-        gbc.weightx = 0;
-        gbc.gridx = 3;  
-        gbc.gridy = 1;
-        frame.add(searchB, gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL; 
+    private void initializeUI() {
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        gbc.gridx = 0;  
+        // Add Patient Button
+        JButton addPatientButton = new JButton("Add Patient");
+        addPatientButton.addActionListener(e -> new CipherCareAddGUI());
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        mainPanel.add(addPatientButton, gbc);
+
+        // View Patients Button
+        JButton viewPatientsButton = new JButton("View Patients");
+        viewPatientsButton.addActionListener(e -> viewPatients());
+
+        gbc.gridy = 1;
+        mainPanel.add(viewPatientsButton, gbc);
+
+        // Edit Patient Button
+        JButton editPatientButton = new JButton("Edit Patient");
+        editPatientButton.addActionListener(e -> editPatient());
+
         gbc.gridy = 2;
-        frame.add(resultsLabel, gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL;  
-        gbc.gridx = 0;  
-        gbc.gridy = 3;
-        gbc.gridwidth = 5;
-        gbc.weightx = 1;
-        frame.add(scroll, gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL;  
-        gbc.gridwidth = 1;
-        gbc.weightx = 0;
-        gbc.gridx = 0;  
-        gbc.gridy = 16;
-        frame.add(updateB, gbc);
-        gbc.gridx = 1;  
-        gbc.gridy = 16;
-        frame.add(addB, gbc);
-        gbc.gridx = 2;  
-        gbc.gridy = 16;
-        frame.add(removeB, gbc);
-        gbc.gridx = 3;  
-        gbc.gridy = 16;
-        frame.add(addServiceB,gbc);
-        gbc.gridx = 4;
-        gbc.gridy = 16;
-        frame.add(refreshB, gbc);
-        gbc.gridx = 5;
-        gbc.gridy = 16;
-        
+        mainPanel.add(editPatientButton, gbc);
 
-        addServiceB.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if(dataTable.getSelectedRow()!=-1){
-                service(String.valueOf(dataTable.getSelectedRow()));
+        // Delete Patient Button
+        JButton deletePatientButton = new JButton("Delete Patient");
+        deletePatientButton.addActionListener(e -> deletePatient());
+
+        gbc.gridy = 3;
+        mainPanel.add(deletePatientButton, gbc);
+
+        // Search Patient Button
+        JButton searchPatientButton = new JButton("Search Patient");
+        searchPatientButton.addActionListener(e -> searchPatient());
+
+        gbc.gridy = 4;
+        mainPanel.add(searchPatientButton, gbc);
+
+        // Manage Appointments Button
+        JButton manageAppointmentsButton = new JButton("Manage Appointments");
+        manageAppointmentsButton.addActionListener(e -> new CipherCareAppointmentGUI());
+
+        gbc.gridy = 5;
+        mainPanel.add(manageAppointmentsButton, gbc);
+
+        frame.add(mainPanel, BorderLayout.WEST);
+
+        // Table to display patients
+        model = new DefaultTableModel();
+        String[] columnNames = {"Patient ID", "Date of Birth", "Address", "Email", "Phone Number"};
+        model.setColumnIdentifiers(columnNames);
+        table = new JTable(model){
+            public boolean isCellEditable(int row, int column) {                
+                return false;               
+            };
+        };
+        JScrollPane scrollPane = new JScrollPane(table);
+        frame.add(scrollPane, BorderLayout.CENTER);
+
+
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    openPatientProfile(table.getSelectedRow());
                 }
             }
         });
 
-        searchB.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                search();
-            }
-        });
+    }
+    private void openPatientProfile(int selectedRow) {
+        try {
+            // Retrieve the data for the selected row
+            Object patientID = model.getValueAt(selectedRow, 0);
+            Object dob = model.getValueAt(selectedRow, 1);
+            Object address = model.getValueAt(selectedRow, 2);
+            Object email = model.getValueAt(selectedRow, 3);
+            Object phone = model.getValueAt(selectedRow, 4);
 
-        tableSelect.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                refresh();
+            // Fetch the report for this patient from the database
+            String medicalReport = "";
+            String prescription = "";
+            String medicalCondition = "";
+            try{
+                Connection connection = CipherCareSQL.getConnection();
+                String query = "SELECT medicalReport, prescription, medicalCondition FROM medicalrecord WHERE patientID = ?";
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, Integer.parseInt(patientID.toString()));
+                ResultSet resultSet = preparedStatement.executeQuery();
+                resultSet.next();
+                medicalReport = resultSet.getString("medicalReport");
+                prescription = resultSet.getString("prescription");
+                medicalCondition = resultSet.getString("medicalCondition");
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(frame, "Error retrieving patient report: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
             }
-        });
 
-        refreshB.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                refresh();
-            }
-        });
+            // Create the profile window
+            JFrame profileFrame = new JFrame("Electronic Medical Record");
+            profileFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            profileFrame.setSize(frame.getSize());
+            profileFrame.setLocation(frame.getLocation());
 
-        addB.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                add();
-            }
-        });
+            // Use BorderLayout for the frame
+            profileFrame.setLayout(new BorderLayout());
 
-        removeB.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                remove();
-            }
-        });
+            // Create a panel for the patient details
+            JPanel detailsPanel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.insets = new Insets(5, 5, 5, 5); // Small padding
+            gbc.anchor = GridBagConstraints.NORTHWEST; // Align to the top-left corner
 
-      
-        updateB.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                
-            }
-        });
+            // Add labels and values
+            gbc.gridx = 1;
+            gbc.gridy = 0;
+            detailsPanel.add(new JLabel("Patient ID:"), gbc);
+            gbc.gridx = 2;
+            detailsPanel.add(new JLabel(String.valueOf(patientID)), gbc);
+
+            gbc.gridx = 1;
+            gbc.gridy++;
+            detailsPanel.add(new JLabel("Date of Birth:"), gbc);
+            gbc.gridx = 2;
+            detailsPanel.add(new JLabel(dob.toString()), gbc);
+
+            gbc.gridx = 1;
+            gbc.gridy++;
+            detailsPanel.add(new JLabel("Address:"), gbc);
+            gbc.gridx = 2;
+            detailsPanel.add(new JLabel(address.toString()), gbc);
+
+            gbc.gridx = 1;
+            gbc.gridy++;
+            detailsPanel.add(new JLabel("Email:"), gbc);
+            gbc.gridx = 2;
+            detailsPanel.add(new JLabel(email.toString()), gbc);
+
+            gbc.gridx = 1;
+            gbc.gridy++;
+            detailsPanel.add(new JLabel("Phone Number:"), gbc);
+            gbc.gridx = 2;
+            detailsPanel.add(new JLabel(phone.toString()), gbc);
+
+            gbc.gridx = 0;
+            gbc.gridy += 2;
+            detailsPanel.add(new JLabel("Current Prescriptions:"), gbc);
+            gbc.gridx = 2;
+            detailsPanel.add(new JLabel("Current Medical Conditions:"), gbc);
+
+            JTextField presciptionField = new JTextField(prescription, 30);
+            JTextField conditionField = new JTextField(medicalCondition, 30);
+
+            gbc.gridx = 0;
+            gbc.gridy++;
+            detailsPanel.add(presciptionField, gbc);
+            gbc.gridx = 2;
+            detailsPanel.add(conditionField, gbc);
+
+            // Add detailsPanel to the top of the frame
+            profileFrame.add(detailsPanel, BorderLayout.NORTH);
+
+            // Create a panel for the text area with a title
+            JPanel reportPanel = new JPanel(new BorderLayout());
+            JLabel reportTitle = new JLabel("Medical Reports");
+            reportTitle.setHorizontalAlignment(SwingConstants.LEFT); // Align the title to the left
+            reportTitle.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); // Add some padding
+
+            // Add the text area for patient report
+            JTextArea reportTextArea = new JTextArea(10, 40); // 10 rows, 40 columns
+            reportTextArea.setLineWrap(true);
+            reportTextArea.setWrapStyleWord(true);
+            reportTextArea.setText(medicalReport); // Set the fetched report
+            JScrollPane scrollPane = new JScrollPane(reportTextArea); // Add scrolling support
+
+            // Add title and text area to the report panel
+            reportPanel.add(reportTitle, BorderLayout.NORTH);
+            reportPanel.add(scrollPane, BorderLayout.CENTER);
+
+            // Add the report panel to the frame
+            profileFrame.add(reportPanel, BorderLayout.CENTER);
+
+
+            JButton saveButton = new JButton("Save");
+            saveButton.setPreferredSize(new Dimension(80, 30)); // Small button dimensions
+            saveButton.addActionListener(e -> {
+                String report = reportTextArea.getText();
+                try{
+                    Connection connection = CipherCareSQL.getConnection();
+                    String query = "UPDATE medicalrecord SET medicalReport = ?, prescription = ?, medicalCondition = ? WHERE patientID = ?";
+                    PreparedStatement preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setString(1, report); 
+                    preparedStatement.setString(2, presciptionField.getText()); 
+                    preparedStatement.setString(3, conditionField.getText()); 
+                    preparedStatement.setInt(4, Integer.parseInt(patientID.toString())); // Set the patient ID
+                    int rowsUpdated = preparedStatement.executeUpdate();
+                    if (rowsUpdated > 0) {
+                        JOptionPane.showMessageDialog(profileFrame, "Report saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        profileFrame.dispose();
+                    } else {
+                        JOptionPane.showMessageDialog(profileFrame, "Failed to save report.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(profileFrame, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                }
+            });
+
+            // Add Save button to a smaller JPanel at the bottom
+            JPanel buttonPanel = new JPanel();
+            buttonPanel.add(saveButton); // Center the button in the panel
+            profileFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+            // Display the profile window
+            profileFrame.setVisible(true);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(frame,
+                    "An error occurred while opening the patient profile.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 
-    public void insertTable(){
-        dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        TableColumnModel columnModel = dataTable.getColumnModel();
-        for(int i = 0; i < dataTable.getColumnCount(); i++){
-            if(dataTable.getRowCount() <= 0){
-                columnModel.getColumn(i).setPreferredWidth(150);
+
+
+
+
+    private void viewPatients() {
+        model.setRowCount(0); // Clear existing rows
+
+        try (Connection connection = CipherCareSQL.getConnection()) {
+            String query = "SELECT patientID, PatientDoB, patientAddress, patientEmail, patientPhone FROM Patient";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                 ResultSet resultSet = preparedStatement.executeQuery()) {
+
+                while (resultSet.next()) {
+                    int id = resultSet.getInt("patientID");
+                    String dob = CipherCareEncryption.decrypt(resultSet.getString("PatientDoB"));
+                    String address = CipherCareEncryption.decrypt(resultSet.getString("patientAddress"));
+                    String email = CipherCareEncryption.decrypt(resultSet.getString("patientEmail"));
+                    String phone = CipherCareEncryption.decrypt(resultSet.getString("patientPhone"));
+
+                    // Log the retrieved row for debugging
+                    //System.out.println("Row: " + id + ", " + dob + ", " + address + ", " + email + ", " + phone);
+
+                    model.addRow(new Object[]{id, dob, address, email, phone});
+                }
             }
-            else{
-                int estimate = ((String)dataTable.getModel().getValueAt(0, i)).length();
-                if (estimate < 15){
-                    columnModel.getColumn(i).setPreferredWidth(150);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(frame, "Failed to retrieve patient records: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    private void editPatient() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a patient to edit.", "Edit Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int patientID = (int) model.getValueAt(selectedRow, 0);
+        String dob = (String) model.getValueAt(selectedRow, 1);
+        String address = (String) model.getValueAt(selectedRow, 2);
+        String email = (String) model.getValueAt(selectedRow, 3);
+        String phone = (String) model.getValueAt(selectedRow, 4);
+
+        JTextField dobField = new JTextField(dob);
+        JTextField addressField = new JTextField(address);
+        JTextField emailField = new JTextField(email);
+        JTextField phoneField = new JTextField(phone);
+
+        JPanel panel = new JPanel(new GridLayout(4, 2));
+        panel.add(new JLabel("Date of Birth:"));
+        panel.add(dobField);
+        panel.add(new JLabel("Address:"));
+        panel.add(addressField);
+        panel.add(new JLabel("Email:"));
+        panel.add(emailField);
+        panel.add(new JLabel("Phone Number:"));
+        panel.add(phoneField);
+
+        int result = JOptionPane.showConfirmDialog(frame, panel, "Edit Patient", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            try (Connection connection = CipherCareSQL.getConnection()) {
+                String newDob = CipherCareEncryption.encrypt(dobField.getText().trim());
+                String newAddress = CipherCareEncryption.encrypt(addressField.getText().trim());
+                String newEmail = CipherCareEncryption.encrypt(emailField.getText().trim());
+                String newPhone = CipherCareEncryption.encrypt(phoneField.getText().trim());
+                String query = "UPDATE Patient SET PatientDoB = ?, patientAddress = ?, patientEmail = ?, patientPhone = ? WHERE patientID = ?";
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setString(1, newDob);
+                    preparedStatement.setString(2, newAddress);
+                    preparedStatement.setString(3, newEmail);
+                    preparedStatement.setString(4, newPhone);
+                    preparedStatement.setInt(5, patientID);
+                    preparedStatement.executeUpdate();
+                    JOptionPane.showMessageDialog(frame, "Patient updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    viewPatients(); // Refresh the patient list
                 }
-                else{
-                    columnModel.getColumn(i).setPreferredWidth(300);
-                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(frame, "Failed to update patient: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
             }
         }
-        scroll = new JScrollPane(dataTable);
-        scroll.setVisible(true);
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        gbc.fill = GridBagConstraints.HORIZONTAL;  
-        gbc.gridx = 0;  
-        gbc.gridy = 3;
-        gbc.gridwidth = 5;
-        gbc.weightx = 1;
-        frame.add(scroll, gbc);
-    }
-   
-    public void refresh(){
-            String table = tableSelect.getSelectedItem().toString();
-           
-            frame.remove(this.scroll);
-            frame.remove(this.columnSelect);
-            columnSelect = new JComboBox<String>(CipherCareSQL.getColumns(table, username, password));
-            columnSelect.setBounds(180,100,120,40);
-            dataTable = new JTable(CipherCareSQL.tableLookup(table, "", "", username, password));
-            gbc.gridx = 1;  
-            gbc.gridy = 1;
-            gbc.gridwidth = 1;
-            gbc.weightx = 0.3;
-            frame.add(columnSelect, gbc);
-            insertTable();
-            frame.revalidate();
-            frame.repaint();
     }
 
-    public void search(){
-        String keyword = searchField.getText();
-        String column = columnSelect.getSelectedItem().toString();
-        String table = tableSelect.getSelectedItem().toString();
-    
+    private void deletePatient() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(frame, "Please select a patient to delete.", "Delete Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int patientID = (int) model.getValueAt(selectedRow, 0);
+
+        int confirm = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete this patient?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            try (Connection connection = CipherCareSQL.getConnection()) {
+                String query = "DELETE FROM Patient WHERE patientID = ?";
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setInt(1, patientID);
+                    preparedStatement.executeUpdate();
+                    model.removeRow(selectedRow);
+                    JOptionPane.showMessageDialog(frame, "Patient deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(frame, "Failed to delete patient: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void searchPatient() {
+        String options[] = {"All Columns", "patientID", "PatientDoB", "patientAddress", "patientEmail", "patientPhone"};
+        JComboBox<String> searchby = new JComboBox<String>(options);
+        Object[] message = {
+            "Select Search Criteria:", searchby,
+            "Enter patient information to search:"
+        };
+        String searchTerm = JOptionPane.showInputDialog(frame, message, "Search Patient", JOptionPane.QUESTION_MESSAGE);
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return;
+        }
+
+        model.setRowCount(0); // Clear existing rows
+
         try{
-            frame.remove(this.scroll);
-            dataTable = new JTable(CipherCareSQL.tableLookup(table, column, keyword, username, password));
-            insertTable();
-            frame.revalidate();
-            frame.repaint();
-        }
-        catch(Exception e){
-            searchField.setText("Error searching for items: " + e.getMessage());
-            refresh();
-        }
-    }
-
-    public void add(){
-        
-        JFrame addFrame = new JFrame("Insert Into Database");
-        addFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        addFrame.setSize(400, 650);
-        addFrame.setLocationRelativeTo(null);
-        addFrame.setLayout(new GridBagLayout());
-        addFrame.setVisible(true);
-    }
-
-    public void remove(){
-        String table = tableSelect.getSelectedItem().toString();
-        int[] rows = dataTable.getSelectedRows();
-        String column = columnSelect.getItemAt(0);
-        for(int row: rows){
-            String value = (String) dataTable.getValueAt(row, 0);
-            CipherCareSQL.remove(table, column, value, username, password);
-        }
-        refresh();
-        
-    }
-
-    public void update(int selectedRow){
-        //TODO
-    }
-
-
-    //Create JFrame
-    public void service(String patientID) {
-    JFrame serviceFrame = new JFrame("Select a Telehealth service");
-    serviceFrame.setSize(400, 400);
-    serviceFrame.setLocationRelativeTo(null);
-    serviceFrame.setLayout(new GridBagLayout());
-
-    GridBagConstraints gbcservice = new GridBagConstraints();
-    gbcservice.fill = GridBagConstraints.HORIZONTAL;
-    gbcservice.insets = new Insets(10, 10, 10, 10);
-    
-    //Display the patient information
-    JLabel information = new JLabel("Patient information:");
-    gbcservice.gridx = 0;
-    gbcservice.gridy = 0;
-    gbcservice.gridwidth = 2;
-    serviceFrame.add(information, gbcservice);
-
-    try {
-        //Retrieve the patient information
-        Map<String, String> data = CipherCareSQL.getPatientColumn(patientID, username,password); 
-        if (data != null) {
-            int row = 1;
-            //Map to iterate through key, value pairs
-           for (Map.Entry<String, String> entry : data.entrySet()) {
-                gbcservice.gridwidth = 1; 
-                gbcservice.gridx = 0;
-                gbcservice.gridy = row;
-                serviceFrame.add(new JLabel(entry.getKey() + ":"), gbcservice);
-                gbcservice.gridx = 1;
-                serviceFrame.add(new JLabel(entry.getValue()), gbcservice);
-                row++;
+            Connection connection = CipherCareSQL.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM Patient");
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int id = resultSet.getInt("patientID");
+                String dob = CipherCareEncryption.decrypt(resultSet.getString("PatientDoB"));
+                String address = CipherCareEncryption.decrypt(resultSet.getString("patientAddress"));
+                String email = CipherCareEncryption.decrypt(resultSet.getString("patientEmail"));
+                String phone = CipherCareEncryption.decrypt(resultSet.getString("patientPhone"));
+                if((searchby.getSelectedIndex() == 0 || searchby.getSelectedIndex() == 1) && String.valueOf(id).contains(searchTerm)){
+                    model.addRow(new Object[]{id, dob, address, email, phone});
+                }
+                else if((searchby.getSelectedIndex() == 0 || searchby.getSelectedIndex() == 2) && dob.contains(searchTerm)){
+                    model.addRow(new Object[]{id, dob, address, email, phone});
+                }
+                else if((searchby.getSelectedIndex() == 0 || searchby.getSelectedIndex() == 3) && address.contains(searchTerm)){
+                    model.addRow(new Object[]{id, dob, address, email, phone});
+                }
+                else if((searchby.getSelectedIndex() == 0 || searchby.getSelectedIndex() == 4) && email.contains(searchTerm)){
+                    model.addRow(new Object[]{id, dob, address, email, phone});
+                }
+                else if((searchby.getSelectedIndex() == 0 || searchby.getSelectedIndex() == 5) && phone.contains(searchTerm)){
+                    model.addRow(new Object[]{id, dob, address, email, phone});
+                }
             }
-
-        } else {
-            gbcservice.gridwidth = 2;
-            gbcservice.gridx = 0;
-            gbcservice.gridy = 1;
-            serviceFrame.add(new JLabel("No patient found with ID: " + patientID), gbcservice);
-        }
-    } catch (ClassNotFoundException | SQLException e) {
-        e.printStackTrace();
-        gbcservice.gridwidth = 2;
-        gbcservice.gridx = 0;
-        gbcservice.gridy = 1;
-        serviceFrame.add(new JLabel("Error fetching patient data"), gbcservice);
-    }
-    //Button to assign a Telehealth Service
-    JButton addAppointmentButton = new JButton("Add Appointment");
-    addAppointmentButton.addActionListener(e -> {
-        createAppointmentForm(patientID);
-    });
-    
-    gbcservice.gridwidth = 2;
-    gbcservice.gridx = 0;
-    gbcservice.gridy++;
-    serviceFrame.add(addAppointmentButton, gbcservice);
-    serviceFrame.setVisible(true);
-}
-
-//Create appointment form 
-private void createAppointmentForm(String patientID) {
-   
-    JFrame appointmentFrame = new JFrame("Create Appointment");
-    appointmentFrame.setSize(400, 400);
-    appointmentFrame.setLocationRelativeTo(null);
-    appointmentFrame.setLayout(new GridBagLayout());
-
-    GridBagConstraints gbc = new GridBagConstraints();
-    gbc.fill = GridBagConstraints.HORIZONTAL;
-    gbc.insets = new Insets(10, 10, 10, 10);
-
-    //Style the JFrame
-    JLabel information = new JLabel("Create Appointment for Patient ID: " + patientID);
-    gbc.gridx = 0;
-    gbc.gridy = 0;
-    gbc.gridwidth = 2;
-    appointmentFrame.add(information, gbc);
-
-    
-    JLabel dateLabel = new JLabel("Date(YYYY-MM-DD):");
-    gbc.gridwidth = 1;
-    gbc.gridy++;
-    appointmentFrame.add(dateLabel, gbc);
-    
-    JTextField dateField = new JTextField(10);
-    gbc.gridx = 1;
-    appointmentFrame.add(dateField, gbc);
-   
-    
-    JLabel startTimeLabel = new JLabel("Start Time(HH:MM AM/PM):");
-    gbc.gridx = 0;
-    gbc.gridy++;
-    appointmentFrame.add(startTimeLabel, gbc);
-    
-    JTextField startTimeField = new JTextField(10);
-    
-    gbc.gridx = 1;
-    appointmentFrame.add(startTimeField, gbc);
-
-   
-    JLabel endTimeLabel = new JLabel("End Time(HH:MM AM/PM):");
-    gbc.gridx = 0;
-    gbc.gridy++;
-    appointmentFrame.add(endTimeLabel, gbc);
-    
-    JTextField endTimeField = new JTextField(10);
-    gbc.gridx = 1;
-    appointmentFrame.add(endTimeField, gbc);
-
-    //Drop Down menu to select telehealth service
-    JLabel serviceLabel = new JLabel("Select Telehealth Service:");
-    gbc.gridx = 0;
-    gbc.gridy++;
-    appointmentFrame.add(serviceLabel, gbc);
-    
-    JComboBox<String> serviceComboBox = new JComboBox<>();
-    try {
-        //Get Telehealth services as a list
-        List<String> services =  CipherCareSQL.getTelehealthServices(username, password);
-        for (String service : services) {
-            serviceComboBox.addItem(service);
-        }
-    } catch (ClassNotFoundException | SQLException e) {
-        e.printStackTrace();
-    }
-    gbc.gridx = 1;
-    appointmentFrame.add(serviceComboBox, gbc);
-    
-    //Button to insert data
-    JButton submitButton = new JButton("Create Appointment");
-  submitButton.addActionListener(e -> {
-    String date = dateField.getText();
-    String startTime = startTimeField.getText();
-    String endTime = endTimeField.getText();
-    String selectedService = (String) serviceComboBox.getSelectedItem();
-
-    
-    boolean validFields = true;
-
-    
-    if (!isValidDate(date)) {
-        dateField.setBackground(Color.RED);
-        JOptionPane.showMessageDialog(appointmentFrame, "Invalid date.");
-        validFields = false; 
-    } else {
-        dateField.setBackground(Color.GREEN);
-    }
-
-   
-    if (!isValidTime(startTime)) {
-        startTimeField.setBackground(Color.RED);
-        JOptionPane.showMessageDialog(appointmentFrame, "Invalid start time format. Please use HH:MM AM/PM");
-        validFields = false; 
-    } else if (!isWithinBusinessHours(startTime)) {
-        startTimeField.setBackground(Color.RED);
-        JOptionPane.showMessageDialog(appointmentFrame, "Start time must be within business hours (8:00 AM - 5:00 PM).");
-        validFields = false; 
-    } else {
-        startTimeField.setBackground(Color.GREEN);
-    }
-
-    
-    if (!isValidTime(endTime)) {
-        endTimeField.setBackground(Color.RED);
-        JOptionPane.showMessageDialog(appointmentFrame, "Invalid end time format. Please use HH:MM AM/PM");
-        validFields = false; 
-    } else if (!isWithinBusinessHours(endTime)) {
-        endTimeField.setBackground(Color.RED);
-        JOptionPane.showMessageDialog(appointmentFrame, "End time must be within business hours (8:00 AM - 5:00 PM).");
-        validFields = false; 
-    } else {
-        endTimeField.setBackground(Color.GREEN);
-    }
-
-   
-    if (!isValidTimeRange(startTime, endTime)) {
-        startTimeField.setBackground(Color.RED);
-        endTimeField.setBackground(Color.RED);
-        JOptionPane.showMessageDialog(appointmentFrame, "Start time must be at least 30 minutes before end time.");
-        validFields = false; 
-    }
-
-  
-    if (!validFields) {
-        return; 
-    }
-
-
-    try {
-        CipherCareSQL.saveAppointment(patientID, selectedService, date, startTime, endTime, username, password);
-        JOptionPane.showMessageDialog(appointmentFrame, "Appointment Created Successfully!");
-        appointmentFrame.dispose();
-    } catch (Exception error) {
-        JOptionPane.showMessageDialog(appointmentFrame, "Error creating appointment: " + error.getMessage());
-        error.printStackTrace();
-    }
-});
-
-    gbc.gridwidth = 2;
-    gbc.gridy++;
-    appointmentFrame.add(submitButton, gbc);
-    appointmentFrame.setVisible(true);
-}
-
-
- public static boolean isValidDate(String date) {
-    SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd");
-    dateformat.setLenient(false);
-    try {  
-        Date parsedDate = dateformat.parse(date);
-        Date currentDate = dateformat.parse(dateformat.format(new Date()));
-        return !parsedDate.before(currentDate);
-    } catch (ParseException e) {
-        return false; 
-    }
-}
-public static boolean isValidTime(String time) {
-        SimpleDateFormat dateformat = new SimpleDateFormat("hh:mm a");
-        dateformat.setLenient(false);
-        try {
-            Date parsedTime = dateformat.parse(time);
-            return true;
-        } catch (ParseException e) {
-            return false;
-        }
-    }
-     public static boolean isValidTimeRange(String startTime, String endTime) {
-        SimpleDateFormat dateformat = new SimpleDateFormat("hh:mm a");
-        try {
-            Date start = dateformat.parse(startTime);
-            Date end = dateformat.parse(endTime);
-            long differenceInMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
-            return differenceInMinutes >= 30;
-        } catch (ParseException e) {
-            return false;
-        }
-    }
-    public static boolean isWithinBusinessHours(String time) {
-        SimpleDateFormat dateformat = new SimpleDateFormat("hh:mm a");
-        try {
-            Date inputTime = dateformat.parse(time);
-            Date businessStart = dateformat.parse("8:00 AM");
-            Date businessEnd = dateformat.parse("5:00 PM");
-
-            return inputTime.equals(businessStart) || inputTime.equals(businessEnd) ||
-                   (inputTime.after(businessStart) && inputTime.before(businessEnd));
-        } catch (ParseException e) {
-            return false;
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(frame, "Failed to search patient records: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
 }
